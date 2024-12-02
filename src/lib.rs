@@ -1,6 +1,6 @@
 mod bindings;
 
-mod test_optimization {
+pub mod test_optimization {
     use std::ffi::CString;
     use std::ptr::null_mut;
     use std::thread::panicking;
