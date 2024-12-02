@@ -1,0 +1,9 @@
+[package]
+name = "test-optimization-rust-api"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+
+[build]
+links = "libcivisibility"
