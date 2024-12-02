@@ -87,6 +87,18 @@ extern "C" {
 //
 extern void civisibility_initialize(char* runtime_name, char* runtime_version, char* framework, char* framework_version, struct unix_time* unix_start_time);
 
+// civisibility_session_set_string_tag sets a string tag on the session.
+//
+extern unsigned char civisibility_session_set_string_tag(char* key, char* value);
+
+// civisibility_session_set_number_tag sets a number tag on the session.
+//
+extern unsigned char civisibility_session_set_number_tag(char* key, double value);
+
+// civisibility_session_set_error sets an error on the session.
+//
+extern unsigned char civisibility_session_set_error(char* error_type, char* error_message, char* error_stacktrace);
+
 // civisibility_shutdown shuts down the CI visibility integration.
 //
 extern void civisibility_shutdown(int exit_code, struct unix_time* unix_finish_time);

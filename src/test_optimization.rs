@@ -2,7 +2,7 @@ use std::ffi::CString;
 use std::ptr::null_mut;
 use std::thread::panicking;
 use std::time::SystemTime;
-use crate::{civisibility_close_module, civisibility_close_test, civisibility_close_test_suite, civisibility_create_module, civisibility_create_test, civisibility_create_test_suite, civisibility_initialize, civisibility_module_set_error, civisibility_module_set_number_tag, civisibility_module_set_string_tag, civisibility_shutdown, civisibility_suite_set_error, civisibility_suite_set_number_tag, civisibility_suite_set_string_tag, civisibility_test_set_error, civisibility_test_set_number_tag, civisibility_test_set_string_tag, unix_time};
+use crate::{civisibility_close_module, civisibility_close_test, civisibility_close_test_suite, civisibility_create_module, civisibility_create_test, civisibility_create_test_suite, civisibility_initialize, civisibility_module_set_error, civisibility_module_set_number_tag, civisibility_module_set_string_tag, civisibility_shutdown, civisibility_suite_set_error, civisibility_suite_set_number_tag, civisibility_suite_set_string_tag, civisibility_test_set_error, civisibility_test_set_number_tag, civisibility_test_set_string_tag, civisibility_session_set_string_tag, civisibility_session_set_number_tag, civisibility_session_set_error, unix_time};
 
 fn get_now() -> unix_time {
     let u_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
@@ -30,6 +30,60 @@ impl TestSession {
         Self {}
     }
 
+
+    #[allow(dead_code)]
+    pub fn set_string_tag(&self, key: impl AsRef<str>, value: impl AsRef<str>) -> bool {
+        let key_cstring = CString::new(key.as_ref()).unwrap();
+        let value_cstring = CString::new(value.as_ref()).unwrap();
+        unsafe {
+            let res = civisibility_session_set_string_tag(key_cstring.into_raw(), value_cstring.into_raw());
+            if res > 0 {
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn set_number_tag(&self, key: impl AsRef<str>, value: f64) -> bool {
+        let key_cstring = CString::new(key.as_ref()).unwrap();
+        unsafe {
+            let res = civisibility_session_set_number_tag(key_cstring.into_raw(), value);
+            if res > 0 {
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn set_error_info(&self, error_type: impl AsRef<str>, error_message: impl AsRef<str>, error_stacktrace: impl AsRef<str>) -> bool {
+        let error_type_cstring = CString::new(error_type.as_ref()).unwrap();
+        let error_message_cstring = CString::new(error_message.as_ref()).unwrap();
+        let error_stacktrace_cstring = CString::new(error_stacktrace.as_ref()).unwrap();
+        unsafe {
+            let res = civisibility_session_set_error(error_type_cstring.into_raw(), error_message_cstring.into_raw(), error_stacktrace_cstring.into_raw());
+            if res > 0 {
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn close(&self, exit_code: i32) {
+        unsafe {
+            if panicking() {
+                civisibility_shutdown(1, &mut get_now());
+            } else {
+                civisibility_shutdown(exit_code, &mut get_now());
+            }
+        }
+    }
+
     #[allow(dead_code)]
     pub fn create_module(&self, name: impl AsRef<str>, framework_name: impl AsRef<str>, framework_version: impl AsRef<str>) -> TestModule {
         let module_name_cstring = CString::new(name.as_ref()).unwrap();
@@ -43,17 +97,6 @@ impl TestSession {
                 &mut get_now());
 
             TestModule { module_id }
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn close(&self, exit_code: i32) {
-        unsafe {
-            if panicking() {
-                civisibility_shutdown(1, &mut get_now());
-            } else {
-                civisibility_shutdown(exit_code, &mut get_now());
-            }
         }
     }
 }

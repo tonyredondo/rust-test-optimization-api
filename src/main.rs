@@ -11,6 +11,9 @@ fn main() {
     let session = test_optimization::TestSession::init();
     println!("Hello, world!");
 
+    session.set_string_tag("Session-KeyFromRust", "Hello world");
+    session.set_number_tag("Session-NumberFromRust", 42f64);
+
     // module
     let module_name = String::from("my-test-module");
     let module = session.create_module(module_name, "Framework Name", "Framework Version");
