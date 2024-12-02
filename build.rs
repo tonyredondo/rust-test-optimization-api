@@ -17,16 +17,37 @@ fn main() {
     };
 
     // Get the folder
-    let lib_dir = format!("libs/{}/{}/", platform, arch);
-    println!("cargo:rustc-link-search=native={}", lib_dir);
+    let lib_name = format!("{}-{}-libcivisibility.7z", platform, arch);
+    let url = format!(
+        "https://github.com/tonyredondo/rust-test-optimization-api/releases/download/v0.0.0/{}",
+        lib_name
+    );
+    let lib_7z_path = PathBuf::from(out_dir.clone()).join("libcivisibility.7z");
 
-    let out_path = PathBuf::from(out_dir);
-    fs::copy(
-        PathBuf::from(lib_dir).join("libcivisibility.dylib"),
-        out_path.join("../../../libcivisibility.dylib")).unwrap_or_else(|e| {
-        eprintln!("Failed to write native library to disk: {}", e);
-        process::exit(1);
-    });
+    // Download the shared library
+    println!("Downloading native library from: {}", url);
+    let response = reqwest::blocking::get(&url)
+        .unwrap_or_else(|e| {
+            eprintln!("Failed to download native library: {}", e);
+            process::exit(1);
+        })
+        .bytes()
+        .unwrap_or_else(|e| {
+            eprintln!("Failed to read response body: {}", e);
+            process::exit(1);
+        });
 
-    println!("cargo:rerun-if-changed=libs");
+    // Write the binary to the output directory
+    fs::write(&lib_7z_path, &response)
+        .unwrap_or_else(|e| {
+            eprintln!("Failed to write native library to disk: {}", e);
+            process::exit(1);
+        });
+
+    sevenz_rust::decompress_file(lib_7z_path, PathBuf::from(out_dir.clone())).expect("Failed to decompress native library");
+
+    let lib_filename = format!("{}-{}-libcivisibility", platform, arch);
+    let lib_dir = PathBuf::from(out_dir.clone()).join(lib_filename);
+    println!("cargo:rustc-link-search=native={}", lib_dir.display());
+    println!("cargo:rustc-link-lib=dylib=civisibility");
 }

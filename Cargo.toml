@@ -1,11 +1,13 @@
 [package]
 name = "temp-test-optimization-rust-api"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 description = "This is a test for a test optimization rust api to upload test optimization data"
 license = "Apache-2.0"
 
-[dependencies]
+[build-dependencies]
+reqwest = { version =  "0.12.9", features = ["blocking"] }
+sevenz-rust = "0.6.1"
 
 [build]
 links = "libcivisibility"
