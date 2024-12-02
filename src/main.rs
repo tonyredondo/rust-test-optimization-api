@@ -50,7 +50,7 @@ fn main() {
     println!("skip test close: {}", skip_test.close(TestStatus::Skip, skip_reason));
 
     // close everything
-    print!("suite closed: {}", suite.close());
+    println!("suite closed: {}", suite.close());
     println!("module closed: {}", module.close());
     session.close(0);
 }
