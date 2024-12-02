@@ -2,6 +2,8 @@
 name = "temp-test-optimization-rust-api"
 version = "0.0.1"
 edition = "2021"
+description = "This is a test for a test optimization rust api to upload test optimization data"
+license = "Apache-2.0"
 
 [dependencies]
 
