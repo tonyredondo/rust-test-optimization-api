@@ -19,7 +19,7 @@ fn main() {
     // Get the folder
     let lib_name = format!("{}-{}-libcivisibility.7z", platform, arch);
     let url = format!(
-        "https://github.com/tonyredondo/rust-test-optimization-api/releases/download/v0.0.0/{}",
+        "https://github.com/tonyredondo/rust-test-optimization-api/releases/download/v0.0.3/{}",
         lib_name
     );
     let lib_7z_path = PathBuf::from(out_dir.clone()).join("libcivisibility.7z");
@@ -49,5 +49,17 @@ fn main() {
     let lib_filename = format!("{}-{}-libcivisibility", platform, arch);
     let lib_dir = PathBuf::from(out_dir.clone()).join(lib_filename);
     println!("cargo:rustc-link-search=native={}", lib_dir.display());
-    println!("cargo:rustc-link-lib=dylib=civisibility");
+    println!("cargo:rustc-link-lib=static=civisibility");
+
+    if !target.contains("windows") {
+        // Link to the dynamic dependency
+        println!("cargo:rustc-link-lib=dylib=resolv");
+    }
+
+    // If we are in osx, we need to add a couple of frameworks
+    if target.contains("apple-darwin") {
+        println!("cargo:rustc-link-lib=framework=CoreFoundation");
+        println!("cargo:rustc-link-lib=framework=IOKit");
+        println!("cargo:rustc-link-lib=framework=Security");
+    }
 }

@@ -6,10 +6,48 @@ pub struct unix_time {
     pub sec: ::std::os::raw::c_ulonglong,
     pub nsec: ::std::os::raw::c_ulonglong,
 }
-
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct setting_early_flake_detection_slow_test_retries {
+    pub ten_s: ::std::os::raw::c_int,
+    pub thirty_s: ::std::os::raw::c_int,
+    pub five_m: ::std::os::raw::c_int,
+    pub five_s: ::std::os::raw::c_int,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct setting_early_flake_detection {
+    pub enabled: ::std::os::raw::c_uchar,
+    pub slow_test_retries: setting_early_flake_detection_slow_test_retries,
+    pub faulty_session_threshold: ::std::os::raw::c_int,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct settings_response {
+    pub code_coverage: ::std::os::raw::c_uchar,
+    pub early_flake_detection: setting_early_flake_detection,
+    pub flaky_test_retries_enabled: ::std::os::raw::c_uchar,
+    pub itr_enabled: ::std::os::raw::c_uchar,
+    pub require_git: ::std::os::raw::c_uchar,
+    pub tests_skipping: ::std::os::raw::c_uchar,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct flaky_test_retries_settings {
+    pub retry_count: ::std::os::raw::c_int,
+    pub total_retry_count: ::std::os::raw::c_int,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct known_test {
+    pub module_name: *mut ::std::os::raw::c_char,
+    pub suite_name: *mut ::std::os::raw::c_char,
+    pub test_name: *mut ::std::os::raw::c_char,
+}
 #[link(name="civisibility")]
 extern "C" {
     pub fn civisibility_initialize(
+        language: *mut ::std::os::raw::c_char,
         runtime_name: *mut ::std::os::raw::c_char,
         runtime_version: *mut ::std::os::raw::c_char,
         framework: *mut ::std::os::raw::c_char,
@@ -137,4 +175,11 @@ extern "C" {
         skip_reason: *mut ::std::os::raw::c_char,
         unix_finish_time: *mut unix_time,
     ) -> ::std::os::raw::c_uchar;
+
+    pub fn civisibility_get_settings() -> settings_response;
+
+    pub fn civisibility_get_flaky_test_retries_settings() -> flaky_test_retries_settings;
+
+    pub fn civisibility_get_known_tests(length: *mut ::std::os::raw::c_int)
+                                        -> *mut *mut known_test;
 }
