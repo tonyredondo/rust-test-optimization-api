@@ -87,8 +87,8 @@ impl TestSession {
     #[allow(dead_code)]
     pub fn init() -> Self {
         let language_name = CString::new("rust").unwrap();
-        let runtime_name = CString::new("rust").unwrap();
-        let runtime_version = CString::new("0.0.1").unwrap();
+        let runtime_name = CString::new("rustc").unwrap();
+        let runtime_version = CString::new(rustc_version_runtime::version().to_string()).unwrap();
         unsafe {
             civisibility_initialize(language_name.into_raw(), runtime_name.into_raw(), runtime_version.into_raw(), null_mut(), null_mut(), &mut get_now());
         }

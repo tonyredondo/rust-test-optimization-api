@@ -1,9 +1,12 @@
 [package]
 name = "temp-test-optimization-rust-api"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 description = "This is a test for a test optimization rust api to upload test optimization data"
 license = "Apache-2.0"
+
+[dependencies]
+rustc_version_runtime = "0.3.0"
 
 [build-dependencies]
 reqwest = { version =  "0.12.9", features = ["blocking"] }
