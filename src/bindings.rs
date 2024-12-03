@@ -181,5 +181,5 @@ extern "C" {
     pub fn civisibility_get_flaky_test_retries_settings() -> flaky_test_retries_settings;
 
     pub fn civisibility_get_known_tests(length: *mut ::std::os::raw::c_int)
-                                        -> *mut *mut known_test;
+                                        -> *mut known_test;
 }

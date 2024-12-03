@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::bindings::*;
 use std::ffi::{c_uchar, CString};
 use std::ptr::{null, null_mut};
@@ -185,20 +186,23 @@ impl TestSession {
     }
 
     #[allow(dead_code)]
-    pub fn get_known_tests(&self) -> Vec<KnownTest> {
+    pub fn get_known_tests(&self) -> HashMap<String, HashMap<String, Vec<String>>> {
         unsafe {
+            let mut modules_map :HashMap<String, HashMap<String, Vec<String>>> = HashMap::new();
             let mut length : ::std::os::raw::c_int = 0;
             let response = civisibility_get_known_tests(&mut length);
-            let mut tests : Vec<KnownTest> = Vec::with_capacity(length as usize);
             for i in 0..length {
-                let element = **response.offset(i as isize);
-                tests.push(KnownTest {
-                    module_name: CString::from_raw(element.module_name).to_str().unwrap().to_owned().to_owned(),
-                    suite_name: CString::from_raw(element.suite_name).to_str().unwrap().to_owned().to_owned(),
-                    test_name: CString::from_raw(element.test_name).to_str().unwrap().to_owned().to_owned(),
-                });
+                let element = *response.offset(i as isize);
+
+                let module_name_string = CString::from_raw(element.module_name).to_str().unwrap().to_owned();
+                let suite_name_string = CString::from_raw(element.suite_name).to_str().unwrap().to_owned();
+                let test_name = CString::from_raw(element.test_name).to_str().unwrap().to_owned();
+
+                let suites_map = modules_map.entry(module_name_string).or_insert_with(|| HashMap::new());
+                let tests_vec = suites_map.entry(suite_name_string).or_insert_with(|| Vec::new());
+                tests_vec.push(test_name);
             }
-            tests
+            modules_map
         }
     }
 }
