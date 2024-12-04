@@ -36,7 +36,7 @@ fn it_works() {
     pass_test.set_number_tag("Pass-NumberFromRust", 42f64);
     pass_test.set_test_source("test.rs", &6, &58);
     sleep(Duration::from_millis(1000));
-    println!("pass test close: {}", pass_test.close(TestStatus::Pass, ""));
+    println!("pass test close: {}", pass_test.close(TestStatus::Pass));
 
     // fail test
     let fail_test = suite.create_test("My FailTest");
@@ -44,7 +44,7 @@ fn it_works() {
     fail_test.set_number_tag("Fail-NumberFromRust", 42f64);
     fail_test.set_error_info("custom_error_type", "error from rust lib", "...");
     sleep(Duration::from_millis(1000));
-    println!("fail test close: {}", fail_test.close(TestStatus::Fail, ""));
+    println!("fail test close: {}", fail_test.close(TestStatus::Fail));
 
     // skip test
     let skip_test = suite.create_test("My SkipTest");
@@ -52,7 +52,7 @@ fn it_works() {
     skip_test.set_number_tag("Skip-KeyFromRust", 42f64);
     sleep(Duration::from_millis(1000));
     let skip_reason = String::from("skip because yes");
-    println!("skip test close: {}", skip_test.close(TestStatus::Skip, skip_reason));
+    println!("skip test close: {}", skip_test.close_with_skip_reason(skip_reason));
 
     // close everything
     println!("suite closed: {}", suite.close());

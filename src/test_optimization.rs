@@ -77,11 +77,16 @@ impl TestSession {
 
     #[allow(dead_code)]
     pub fn init() -> Self {
-        let language_name = CString::new("rust").unwrap();
-        let runtime_name = CString::new("rustc").unwrap();
-        let runtime_version = CString::new(rustc_version_runtime::version().to_string()).unwrap();
+        Self::init_with_values("rust", "rustc", rustc_version_runtime::version().to_string())
+    }
+
+    #[allow(dead_code)]
+    pub fn init_with_values(language_name: impl AsRef<str>, runtime_name: impl AsRef<str>, runtime_version: impl AsRef<str>) -> Self {
+        let language_name_cstring = CString::new(language_name.as_ref()).unwrap();
+        let runtime_name_cstring = CString::new(runtime_name.as_ref()).unwrap();
+        let runtime_version_cstring = CString::new(runtime_version.as_ref()).unwrap();
         unsafe {
-            civisibility_initialize(language_name.into_raw(), runtime_name.into_raw(), runtime_version.into_raw(), null_mut(), null_mut(), &mut get_now());
+            civisibility_initialize(language_name_cstring.into_raw(), runtime_name_cstring.into_raw(), runtime_version_cstring.into_raw(), null_mut(), null_mut(), &mut get_now());
         }
         Self {}
     }
@@ -389,7 +394,17 @@ impl Test {
     }
 
     #[allow(dead_code)]
-    pub fn close(&self, status: TestStatus, skip_reason: impl AsRef<str>) -> bool {
+    pub fn close(&self, status: TestStatus) -> bool {
+        unsafe {
+            c_uchar_to_bool(civisibility_close_test(self.test_id,
+                                                    status as u8,
+                                                    null_mut(),
+                                                    &mut get_now()))
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn close_with_skip_reason(&self, skip_reason: impl AsRef<str>) -> bool {
         let mut skip_reason_cstring:*mut ::std::os::raw::c_char = null_mut();
         let skip_reason_ref = skip_reason.as_ref();
         if skip_reason_ref != "" {
@@ -397,7 +412,7 @@ impl Test {
         }
         unsafe {
             c_uchar_to_bool(civisibility_close_test(self.test_id,
-                                                    status as u8,
+                                                    TestStatus::Skip as u8,
                                                     skip_reason_cstring,
                                                     &mut get_now()))
         }
