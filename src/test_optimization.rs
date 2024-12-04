@@ -68,16 +68,6 @@ pub struct FlakyTestRetriesSettings {
     pub total_retry_count: i32,
 }
 
-#[derive(Debug)]
-pub struct KnownTest {
-    #[allow(dead_code)]
-    pub module_name: String,
-    #[allow(dead_code)]
-    pub suite_name: String,
-    #[allow(dead_code)]
-    pub test_name: String,
-}
-
 /********************************
     Test session
 *********************************/
