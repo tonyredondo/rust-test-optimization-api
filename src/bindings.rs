@@ -44,6 +44,27 @@ pub struct known_test {
     pub suite_name: *mut ::std::os::raw::c_char,
     pub test_name: *mut ::std::os::raw::c_char,
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct skippable_test {
+    pub suite_name: *mut ::std::os::raw::c_char,
+    pub test_name: *mut ::std::os::raw::c_char,
+    pub parameters: *mut ::std::os::raw::c_char,
+    pub custom_configurations_json: *mut ::std::os::raw::c_char,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct test_coverage_file {
+    pub filename: *mut ::std::os::raw::c_char,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct test_coverage {
+    pub test_suite_id: ::std::os::raw::c_ulonglong,
+    pub span_id: ::std::os::raw::c_ulonglong,
+    pub files: *mut test_coverage_file,
+    pub files_len: ::std::os::raw::c_ulonglong,
+}
 #[link(name="civisibility")]
 extern "C" {
     pub fn civisibility_initialize(
@@ -180,6 +201,15 @@ extern "C" {
 
     pub fn civisibility_get_flaky_test_retries_settings() -> flaky_test_retries_settings;
 
-    pub fn civisibility_get_known_tests(length: *mut ::std::os::raw::c_int)
-                                        -> *mut known_test;
+    pub fn civisibility_get_known_tests(known_tests: *mut *mut known_test)
+                                        -> ::std::os::raw::c_int;
+
+    pub fn civisibility_get_skippable_tests(
+        skippable_tests: *mut *mut skippable_test,
+    ) -> ::std::os::raw::c_int;
+
+    pub fn civisibility_send_code_coverage_payload(
+        coverages: *mut test_coverage,
+        coverages_length: ::std::os::raw::c_int,
+    );
 }

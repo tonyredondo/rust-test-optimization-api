@@ -11,6 +11,7 @@ fn it_works() {
     println!("{:?}", session.get_settings());
     println!("{:?}", session.get_flaky_test_retries_settings());
     println!("{:?}", session.get_known_tests());
+    println!("{:?}", session.get_skippable_tests());
 
     session.set_string_tag("Session-KeyFromRust", "Hello world");
     session.set_number_tag("Session-NumberFromRust", 42f64);
@@ -35,6 +36,7 @@ fn it_works() {
     pass_test.set_string_tag("Pass-KeyFromRust", "Hello world");
     pass_test.set_number_tag("Pass-NumberFromRust", 42f64);
     pass_test.set_test_source("test.rs", &6, &58);
+    pass_test.set_coverage_data(&["file.rs"]);
     sleep(Duration::from_millis(1000));
     println!("pass test close: {}", pass_test.close(TestStatus::Pass));
 

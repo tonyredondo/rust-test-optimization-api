@@ -1,3 +1,4 @@
+use std::alloc::{alloc, dealloc, Layout};
 use std::collections::HashMap;
 use crate::bindings::*;
 use std::ffi::{c_uchar, CString};
@@ -66,6 +67,18 @@ pub struct FlakyTestRetriesSettings {
     pub retry_count: i32,
     #[allow(dead_code)]
     pub total_retry_count: i32,
+}
+
+#[derive(Debug)]
+pub struct SkippableTest {
+    #[allow(dead_code)]
+    pub suite_name: String,
+    #[allow(dead_code)]
+    pub test_name: String,
+    #[allow(dead_code)]
+    pub parameters: String,
+    #[allow(dead_code)]
+    pub custom_configurations_json: String,
 }
 
 /********************************
@@ -184,10 +197,10 @@ impl TestSession {
     pub fn get_known_tests(&self) -> HashMap<String, HashMap<String, Vec<String>>> {
         unsafe {
             let mut modules_map :HashMap<String, HashMap<String, Vec<String>>> = HashMap::new();
-            let mut length : ::std::os::raw::c_int = 0;
-            let response = civisibility_get_known_tests(&mut length);
+            let mut known_tests : *mut known_test = null_mut();
+            let length = civisibility_get_known_tests(&mut known_tests) as i32;
             for i in 0..length {
-                let element = *response.offset(i as isize);
+                let element = *known_tests.offset(i as isize);
 
                 let module_name_string = CString::from_raw(element.module_name).to_str().unwrap().to_owned();
                 let suite_name_string = CString::from_raw(element.suite_name).to_str().unwrap().to_owned();
@@ -198,6 +211,34 @@ impl TestSession {
                 tests_vec.push(test_name);
             }
             modules_map
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn get_skippable_tests(&self) -> HashMap<String, HashMap<String, Vec<SkippableTest>>> {
+        unsafe {
+            let mut suites_map : HashMap<String, HashMap<String, Vec<SkippableTest>>> = HashMap::new();
+            let mut skippable_tests : *mut skippable_test = null_mut();
+            let length = civisibility_get_skippable_tests(&mut skippable_tests) as u32;
+            for i in 0..length {
+                let element = *skippable_tests.offset(i as isize);
+
+                let suite_name_string = CString::from_raw(element.suite_name).to_str().unwrap().to_owned();
+                let test_name_string = CString::from_raw(element.test_name).to_str().unwrap().to_owned();
+                let parameters_string = CString::from_raw(element.parameters).to_str().unwrap().to_owned();
+                let custom_configurations_json_string = CString::from_raw(element.custom_configurations_json).to_str().unwrap().to_owned();
+
+                let suites_map = suites_map.entry(suite_name_string.clone()).or_insert_with(|| HashMap::new());
+                let tests_vec = suites_map.entry(test_name_string.clone()).or_insert_with(|| Vec::new());
+
+                tests_vec.push(SkippableTest {
+                    suite_name: suite_name_string,
+                    test_name: test_name_string,
+                    parameters: parameters_string,
+                    custom_configurations_json: custom_configurations_json_string,
+                })
+            }
+            suites_map
         }
     }
 }
@@ -415,6 +456,33 @@ impl Test {
                                                     TestStatus::Skip as u8,
                                                     skip_reason_cstring,
                                                     &mut get_now()))
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn set_coverage_data(&self, files: &[impl AsRef<str>]) {
+        unsafe {
+            let layout = Layout::array::<test_coverage_file>(files.len()).unwrap();
+            let coverage_file_ptr = alloc(layout);
+            let coverage_file : *mut test_coverage_file = coverage_file_ptr as *mut test_coverage_file;
+            let mut idx = 0;
+            for file in files.iter() {
+                let file_cstring = CString::new(file.as_ref()).unwrap();
+                let element = coverage_file.offset(idx);
+                *element = test_coverage_file {
+                    filename: file_cstring.into_raw(),
+                };
+                idx = idx + 1;
+            }
+            let mut coverage_data = test_coverage {
+                test_suite_id: self.suite_id,
+                span_id: self.test_id,
+                files: coverage_file,
+                files_len: files.len() as u64,
+            };
+
+            civisibility_send_code_coverage_payload(&mut coverage_data, 1);
+            dealloc(coverage_file_ptr, layout);
         }
     }
 }
