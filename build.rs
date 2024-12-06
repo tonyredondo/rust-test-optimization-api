@@ -19,7 +19,7 @@ fn main() {
     // Get the folder
     let lib_name = format!("{}-{}-libcivisibility.7z", platform, arch);
     let url = format!(
-        "https://github.com/tonyredondo/rust-test-optimization-api/releases/download/v0.0.8/{}",
+        "https://github.com/tonyredondo/rust-test-optimization-api/releases/download/v0.0.9/{}",
         lib_name
     );
     let lib_7z_path = PathBuf::from(out_dir.clone()).join("libcivisibility.7z");
