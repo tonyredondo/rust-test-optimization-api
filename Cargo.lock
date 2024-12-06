@@ -1260,8 +1260,9 @@ dependencies = [
 
 [[package]]
 name = "temp-test-optimization-rust-api"
-version = "0.0.8"
+version = "0.0.9"
 dependencies = [
+ "libc",
  "reqwest",
  "rustc_version_runtime",
  "sevenz-rust",
