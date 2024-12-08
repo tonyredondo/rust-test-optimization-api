@@ -19,7 +19,7 @@ fn c_uchar_to_bool(value: c_uchar) -> bool {
     value > 0
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Settings {
     #[allow(dead_code)]
     pub code_coverage: bool,
@@ -35,7 +35,7 @@ pub struct Settings {
     pub tests_skipping: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EfDSettings {
     #[allow(dead_code)]
     pub enabled: bool,
@@ -45,7 +45,7 @@ pub struct EfDSettings {
     pub faulty_session_threshold: i32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EfdSlowTestRetriesSettings {
     #[allow(dead_code)]
     pub ten_s: i32,
@@ -57,7 +57,7 @@ pub struct EfdSlowTestRetriesSettings {
     pub five_s: i32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FlakyTestRetriesSettings {
     #[allow(dead_code)]
     pub retry_count: i32,
@@ -65,7 +65,7 @@ pub struct FlakyTestRetriesSettings {
     pub total_retry_count: i32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SkippableTest {
     #[allow(dead_code)]
     pub suite_name: String,
@@ -81,6 +81,7 @@ pub struct SkippableTest {
     Test session
 *********************************/
 
+#[derive(Debug, Clone)]
 pub struct TestSession;
 impl TestSession {
 
@@ -321,6 +322,7 @@ impl TestSession {
     Test module
 *********************************/
 
+#[derive(Debug, Clone)]
 pub struct TestModule {
     pub module_id: u64,
 }
@@ -419,6 +421,7 @@ impl TestModule {
     Test suite
 *********************************/
 
+#[derive(Debug, Clone)]
 pub struct TestSuite {
     pub suite_id: u64,
     module_id: u64
@@ -521,12 +524,14 @@ impl TestSuite {
     Test
 *********************************/
 
+#[derive(Debug, Clone)]
 pub enum TestStatus {
     Pass = 0,
     Fail = 1,
     Skip = 2,
 }
 
+#[derive(Debug, Clone)]
 pub struct Test {
     pub test_id: u64,
     suite_id: u64,
