@@ -270,9 +270,9 @@ impl TestSession {
                 let suite_name_c = CString::from_raw(element.suite_name);
                 let test_name_c = CString::from_raw(element.test_name);
 
-                let module_name_string = module_name_c.to_str().unwrap().to_owned();
-                let suite_name_string = suite_name_c.to_str().unwrap().to_owned();
-                let test_name = test_name_c.to_str().unwrap().to_owned();
+                let module_name_string = module_name_c.into_string().unwrap();
+                let suite_name_string = suite_name_c.into_string().unwrap();
+                let test_name = test_name_c.into_string().unwrap();
 
                 let suites_map = modules_map.entry(module_name_string).or_insert_with(HashMap::new);
                 let tests_vec = suites_map.entry(suite_name_string).or_insert_with(Vec::new);
@@ -297,10 +297,10 @@ impl TestSession {
                 let parameters_c = CString::from_raw(element.parameters);
                 let custom_configurations_json_c = CString::from_raw(element.custom_configurations_json);
 
-                let suite_name_string = suite_name_c.to_str().unwrap().to_owned();
-                let test_name_string = test_name_c.to_str().unwrap().to_owned();
-                let parameters_string = parameters_c.to_str().unwrap().to_owned();
-                let custom_configurations_json_string = custom_configurations_json_c.to_str().unwrap().to_owned();
+                let suite_name_string = suite_name_c.into_string().unwrap();
+                let test_name_string = test_name_c.into_string().unwrap();
+                let parameters_string = parameters_c.into_string().unwrap();
+                let custom_configurations_json_string = custom_configurations_json_c.into_string().unwrap();
 
                 let suites_map_entry = suites_map.entry(suite_name_string.clone()).or_insert_with(HashMap::new);
                 let tests_vec = suites_map_entry.entry(test_name_string.clone()).or_insert_with(Vec::new);
@@ -646,10 +646,9 @@ impl Test {
     #[allow(dead_code)]
     pub fn close_with_skip_reason(&self, skip_reason: impl AsRef<str>) -> bool {
         let skip_reason_ref = skip_reason.as_ref();
-        let mut skip_reason_ptr = null_mut();
         if !skip_reason_ref.is_empty() {
             let skip_reason_cstring = CString::new(skip_reason_ref).unwrap();
-            skip_reason_ptr = skip_reason_cstring.into_raw();
+            let skip_reason_ptr = skip_reason_cstring.into_raw();
 
             let mut now = get_now();
             let result = unsafe {
@@ -669,7 +668,7 @@ impl Test {
             unsafe {
                 c_uchar_to_bool(civisibility_close_test(self.test_id,
                                                         TestStatus::Skip as u8,
-                                                        skip_reason_ptr,
+                                                        null_mut(),
                                                         &mut now))
             }
         }
