@@ -312,8 +312,8 @@ impl TestSession {
                 let tests_vec = suites_map_entry.entry(test_name_string.clone()).or_insert_with(Vec::new);
 
                 tests_vec.push(SkippableTest {
-                    suite_name: suite_name_string,
-                    test_name: test_name_string,
+                    suite_name: suite_name_string.clone(),
+                    test_name: test_name_string.clone(),
                     parameters: parameters_string,
                     custom_configurations_json: custom_configurations_json_string,
                 });
