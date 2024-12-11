@@ -54,6 +54,18 @@ fn main() {
     if !target.contains("windows") {
         // Link to the dynamic dependency
         println!("cargo:rustc-link-lib=dylib=resolv");
+    } else {
+        // Windows target
+        println!("cargo::rerun-if-changed=src/cgo.c");
+        cc::Build::new()
+            .file("src/cgo.c")
+            .compile("cgo");
+
+        // Link to the lib
+        println!("cargo:rustc-link-lib=static=cgo");
+
+        // Link to the legacy stuff
+        println!("cargo:rustc-link-lib=static=legacy_stdio_definitions");
     }
 
     // If we are in osx, we need to add a couple of frameworks
