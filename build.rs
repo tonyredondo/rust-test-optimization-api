@@ -63,9 +63,6 @@ fn main() {
 
         // Link to the lib
         println!("cargo:rustc-link-lib=static=cgo");
-
-        // Link to the legacy stuff
-        println!("cargo:rustc-link-lib=static=legacy_stdio_definitions");
     }
 
     // If we are in osx, we need to add a couple of frameworks
