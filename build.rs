@@ -55,14 +55,9 @@ fn main() {
         // Link to the dynamic dependency
         println!("cargo:rustc-link-lib=dylib=resolv");
     } else {
-        // Windows target
-        println!("cargo::rerun-if-changed=src/cgo.c");
-        cc::Build::new()
-            .file("src/cgo.c")
-            .compile("cgo");
-
-        // Link to the lib
-        println!("cargo:rustc-link-lib=static=cgo");
+        // Windows version requires cc as a build-dependency
+        #[cfg(target_os = "windows")]
+        configure_windows();
     }
 
     // If we are in osx, we need to add a couple of frameworks
@@ -71,4 +66,16 @@ fn main() {
         println!("cargo:rustc-link-lib=framework=IOKit");
         println!("cargo:rustc-link-lib=framework=Security");
     }
+}
+
+#[cfg(target_os = "windows")]
+fn configure_windows() {
+    // Windows target
+    println!("cargo::rerun-if-changed=src/cgo.c");
+    cc::Build::new()
+        .file("src/cgo.c")
+        .compile("cgo");
+
+    // Link to the lib
+    println!("cargo:rustc-link-lib=static=cgo");
 }
