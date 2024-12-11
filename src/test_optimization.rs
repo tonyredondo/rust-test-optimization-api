@@ -92,6 +92,12 @@ impl TestSession {
 
     #[allow(dead_code)]
     pub fn init_with_values(language_name: impl AsRef<str>, runtime_name: impl AsRef<str>, runtime_version: impl AsRef<str>) -> Self {
+
+        #[cfg(target_os = "windows")]
+        unsafe {
+            _rt0_amd64_windows_lib()
+        }
+
         let language_name_cstring = CString::new(language_name.as_ref()).unwrap();
         let runtime_name_cstring = CString::new(runtime_name.as_ref()).unwrap();
         let runtime_version_cstring = CString::new(runtime_version.as_ref()).unwrap();

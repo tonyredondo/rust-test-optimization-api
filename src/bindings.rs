@@ -110,6 +110,10 @@ pub struct test_coverage {
 // External functions
 
 extern "C" {
+
+    #[cfg(target_os = "windows")]
+    pub fn _rt0_amd64_windows_lib();
+
     // civisibility_initialize
     // extern void civisibility_initialize(char* language, char* runtime_name, char* runtime_version, char* framework, char* framework_version, struct unix_time* unix_start_time);
     pub fn civisibility_initialize(
