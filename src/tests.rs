@@ -12,7 +12,10 @@ fn it_works() {
     println!("{:?}", session.get_flaky_test_retries_settings());
     println!("{:?}", session.get_known_tests());
     println!("{:?}", session.get_skippable_tests());
+    println!("{:?}", session.get_test_management_tests());
 
+    println!("session id: {:?}", session.session_id);
+    
     session.set_string_tag("Session-KeyFromRust", "Hello world");
     session.set_number_tag("Session-NumberFromRust", 42f64);
 

@@ -1,4 +1,4 @@
 pub mod test_optimization;
-mod bindings;
 #[cfg(test)]
 mod tests;
+mod libcivisibility_bindings;
