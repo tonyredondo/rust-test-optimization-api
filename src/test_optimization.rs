@@ -128,7 +128,7 @@ impl TestSession {
         runtime_version: impl AsRef<str>,
         working_directory: Option<impl AsRef<str>>,
     ) -> Self {
-        
+
         #[cfg(target_os = "windows")]
         unsafe {
             // On Windows, call the platform-specific initialization
@@ -744,5 +744,96 @@ impl Test {
             // The CString objects in `cstrings` are automatically freed when they go out of scope.
         }
     }
+}
 
+/********************************
+    Spans
+*********************************/
+
+#[derive(Debug, Clone)]
+pub struct Span {
+    pub span_id: u64,
+    pub parent_id: u64,
+}
+impl Span {
+    pub fn create(
+        parent_id: u64,
+        operation_name: impl AsRef<str>,
+        service_name: impl AsRef<str>,
+        resource_name: impl AsRef<str>,
+        span_type: impl AsRef<str>,
+    ) -> Self {
+
+        let operation_name_cstring = CString::new(operation_name.as_ref()).unwrap();
+        let service_name_cstring = CString::new(service_name.as_ref()).unwrap();
+        let resource_name_cstring = CString::new(resource_name.as_ref()).unwrap();
+        let span_type_cstring = CString::new(span_type.as_ref()).unwrap();
+        let mut now = get_now();
+
+        let span_start_options = topt_SpanStartOptions {
+            operation_name: operation_name_cstring.as_ptr() as *mut c_char,
+            service_name: service_name_cstring.as_ptr() as *mut c_char,
+            resource_name: resource_name_cstring.as_ptr() as *mut c_char,
+            span_type: span_type_cstring.as_ptr() as *mut c_char,
+            start_time: &mut now,
+            string_tags: null_mut(),
+            number_tags: null_mut(),
+        };
+
+        let span_result = unsafe {
+            topt_span_create(parent_id, span_start_options)
+        };
+
+        Self{ span_id: span_result.span_id, parent_id }
+    }
+
+    #[allow(dead_code)]
+    pub fn set_string_tag(&self, key: impl AsRef<str>, value: impl AsRef<str>) -> bool {
+        let key_cstring = CString::new(key.as_ref()).unwrap();
+        let value_cstring = CString::new(value.as_ref()).unwrap();
+        unsafe {
+            Bool_to_bool(topt_span_set_string_tag(
+                self.span_id,
+                key_cstring.as_ptr() as *mut c_char,
+                value_cstring.as_ptr() as *mut c_char,
+            ))
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn set_number_tag(&self, key: impl AsRef<str>, value: f64) -> bool {
+        let key_cstring = CString::new(key.as_ref()).unwrap();
+        unsafe {
+            Bool_to_bool(topt_span_set_number_tag(self.span_id, key_cstring.as_ptr() as *mut c_char, value))
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn set_error_info(
+        &self,
+        error_type: impl AsRef<str>,
+        error_message: impl AsRef<str>,
+        error_stacktrace: impl AsRef<str>,
+    ) -> bool {
+        let error_type_cstring = CString::new(error_type.as_ref()).unwrap();
+        let error_message_cstring = CString::new(error_message.as_ref()).unwrap();
+        let error_stacktrace_cstring = CString::new(error_stacktrace.as_ref()).unwrap();
+
+        unsafe {
+            Bool_to_bool(topt_span_set_error(
+                self.span_id,
+                error_type_cstring.as_ptr() as *mut c_char,
+                error_message_cstring.as_ptr() as *mut c_char,
+                error_stacktrace_cstring.as_ptr() as *mut c_char,
+            ))
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn close(&self) -> bool {
+        let mut now = get_now();
+        unsafe {
+            Bool_to_bool(topt_span_close(self.span_id, &mut now))
+        }
+    }
 }
