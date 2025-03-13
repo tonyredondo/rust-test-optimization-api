@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::ffi::{c_char, CStr, CString};
 use std::ptr::null_mut;
 use std::thread::panicking;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 fn get_now() -> topt_UnixTime {
     let u_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
@@ -106,19 +106,63 @@ pub struct TestManagementTest {
     pub attempt_to_fix: bool,
 }
 
+#[derive(Debug, Clone)]
+pub struct MockSpan {
+    #[allow(dead_code)]
+    pub span_id: u64,
+    #[allow(dead_code)]
+    pub trace_id: u64,
+    #[allow(dead_code)]
+    pub parent_span_id: u64,
+    #[allow(dead_code)]
+    pub start_time: SystemTime,
+    #[allow(dead_code)]
+    pub finish_time: SystemTime,
+    #[allow(dead_code)]
+    pub operation_name: String,
+    #[allow(dead_code)]
+    pub string_tags: HashMap<String, String>,
+    #[allow(dead_code)]
+    pub number_tags: HashMap<String, f64>,
+}
+
 /********************************
     Test session
 *********************************/
+static LANGUAGE_NAME: &str = "rust";
+static RUNTIME_NAME: &str = "rustc";
 
 #[derive(Debug, Clone)]
 pub struct TestSession {
     #[allow(dead_code)]
     pub session_id: u64,
 }
+
 impl TestSession {
+
+    #[allow(dead_code)]
+    pub fn runtime_version() -> String {
+        rustc_version_runtime::version().to_string()
+    }
+
     #[allow(dead_code)]
     pub fn init() -> Self {
-        Self::init_with_values("rust", "rustc", rustc_version_runtime::version().to_string(), None::<&str>)
+        Self::init_with_values(LANGUAGE_NAME, RUNTIME_NAME, Self::runtime_version(), None::<&str>, false)
+    }
+
+    #[allow(dead_code)]
+    pub fn init_with_working_dir(working_dir: &str) -> Self {
+        Self::init_with_values(LANGUAGE_NAME, RUNTIME_NAME, Self::runtime_version(), Some(working_dir), false)
+    }
+
+    #[allow(dead_code)]
+    pub fn init_mock() -> Self {
+        Self::init_with_values(LANGUAGE_NAME, RUNTIME_NAME, Self::runtime_version(), None::<&str>, true)
+    }
+
+    #[allow(dead_code)]
+    pub fn init_mock_with_working_dir(working_dir: &str) -> Self {
+        Self::init_with_values(LANGUAGE_NAME, RUNTIME_NAME, Self::runtime_version(), Some(working_dir), true)
     }
 
     #[allow(dead_code)]
@@ -127,6 +171,7 @@ impl TestSession {
         runtime_name: impl AsRef<str>,
         runtime_version: impl AsRef<str>,
         working_directory: Option<impl AsRef<str>>,
+        use_mock_tracer: bool,
     ) -> Self {
 
         #[cfg(target_os = "windows")]
@@ -154,7 +199,7 @@ impl TestSession {
                 .map_or(null_mut(), |s| s.as_ptr() as *mut c_char),
             environment_variables: null_mut(),
             global_tags: null_mut(),
-            use_mock_tracer: 0,
+            use_mock_tracer: if use_mock_tracer { 1 } else { 0 },
             unused01: null_mut(),
             unused02: null_mut(),
             unused03: null_mut(),
@@ -744,6 +789,107 @@ impl Test {
             // The CString objects in `cstrings` are automatically freed when they go out of scope.
         }
     }
+
+    #[allow(dead_code)]
+    pub fn set_benchmark_string_data<K: AsRef<str>, V: AsRef<str>>(
+        &self,
+        measure_type: impl AsRef<str>,
+        data: &HashMap<K, V>,
+    ) -> bool {
+        // If there is no data, we return success.
+        let num_pairs = data.len();
+        if num_pairs == 0 {
+            return true;
+        }
+        // Allocate memory for an array of topt_KeyValuePair.
+        let layout = Layout::array::<topt_KeyValuePair>(num_pairs).unwrap();
+        let kv_array_ptr = unsafe { alloc(layout) as *mut topt_KeyValuePair };
+
+        // Store CStrings to keep them alive during the call.
+        let mut cstrings: Vec<CString> = Vec::with_capacity(num_pairs * 2);
+        for (i, (key, value)) in data.iter().enumerate() {
+            // Convert the key and value to CStrings using their AsRef<str> implementation.
+            let key_c = CString::new(key.as_ref()).unwrap();
+            let value_c = CString::new(value.as_ref()).unwrap();
+
+            // Prepare the key-value pair.
+            let kv = topt_KeyValuePair {
+                key: key_c.as_ptr() as *mut c_char,
+                value: value_c.as_ptr() as *mut c_char,
+            };
+            unsafe {
+                *kv_array_ptr.add(i) = kv;
+            }
+
+            // Push them to keep them alive during the FFI call.
+            cstrings.push(key_c);
+            cstrings.push(value_c);
+        }
+
+        // Build the topt_KeyValueArray.
+        let kv_array = topt_KeyValueArray {
+            data: kv_array_ptr,
+            len: num_pairs,
+        };
+        let measure_type_c = CString::new(measure_type.as_ref()).unwrap();
+        // Call the FFI function.
+        let result = unsafe {
+            Bool_to_bool(topt_test_set_benchmark_string_data(
+                self.test_id,
+                measure_type_c.as_ptr() as *mut c_char,
+                kv_array,
+            ))
+        };
+        // Free the allocated array memory.
+        unsafe { dealloc(kv_array_ptr as *mut u8, layout); }
+        result
+    }
+
+    #[allow(dead_code)]
+    pub fn set_benchmark_number_data<K: AsRef<str>>(
+        &self,
+        measure_type: impl AsRef<str>,
+        data: &HashMap<K, f64>,
+    ) -> bool {
+        let num_pairs = data.len();
+        if num_pairs == 0 {
+            return true;
+        }
+        // Allocate memory for an array of topt_KeyNumberPair.
+        let layout = Layout::array::<topt_KeyNumberPair>(num_pairs).unwrap();
+        let kn_array_ptr = unsafe { alloc(layout) as *mut topt_KeyNumberPair };
+
+        // Keep keys alive in a vector of CStrings.
+        let mut cstrings: Vec<CString> = Vec::with_capacity(num_pairs);
+        let mut i = 0;
+        for (key, &value) in data.iter() {
+            let key_c = CString::new(key.as_ref()).unwrap();
+            let kn = topt_KeyNumberPair {
+                key: key_c.as_ptr() as *mut c_char,
+                value,
+            };
+            unsafe {
+                *kn_array_ptr.add(i) = kn;
+            }
+            cstrings.push(key_c);
+            i += 1;
+        }
+        let kn_array = topt_KeyNumberArray {
+            data: kn_array_ptr,
+            len: num_pairs,
+        };
+        let measure_type_c = CString::new(measure_type.as_ref()).unwrap();
+        let result = unsafe {
+            Bool_to_bool(topt_test_set_benchmark_number_data(
+                self.test_id,
+                measure_type_c.as_ptr() as *mut c_char,
+                kn_array,
+            ))
+        };
+        unsafe { dealloc(kn_array_ptr as *mut u8, layout); }
+        result
+    }
+
 }
 
 /********************************
@@ -835,5 +981,123 @@ impl Span {
         unsafe {
             Bool_to_bool(topt_span_close(self.span_id, &mut now))
         }
+    }
+}
+
+/********************************
+    Debugging // MockTracer
+*********************************/
+
+#[derive(Debug, Clone)]
+pub struct MockTracer;
+
+impl MockTracer {
+    #[allow(dead_code)]
+    pub fn reset() -> bool {
+        unsafe {
+            Bool_to_bool(topt_debug_mock_tracer_reset())
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn get_finished_spans() -> Vec<MockSpan> {
+        unsafe {
+            // Get the array from the native side.
+            let finished_array = topt_debug_mock_tracer_get_finished_spans();
+            // Convert the C array into a Vec<MockSpan>.
+            let spans = Self::convert_mock_span_array(&finished_array);
+            // Free the native array.
+            topt_debug_mock_tracer_free_mock_span_array(finished_array);
+            // Return
+            spans
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn get_open_spans() -> Vec<MockSpan> {
+        unsafe {
+            // Get the array from the native side.
+            let open_array = topt_debug_mock_tracer_get_open_spans();
+            // Convert the C array into a Vec<MockSpan>.
+            let spans = Self::convert_mock_span_array(&open_array);
+            // Free the native array.
+            topt_debug_mock_tracer_free_mock_span_array(open_array);
+            // Return
+            spans
+        }
+    }
+
+    // Helper: convert topt_UnixTime to SystemTime
+    fn convert_unix_time(ut: &topt_UnixTime) -> SystemTime {
+        SystemTime::UNIX_EPOCH + Duration::new(ut.sec, ut.nsec as u32)
+    }
+
+    // Helper: convert a C KeyValue array to a HashMap<String, String>
+    fn convert_key_value_array(array: &topt_KeyValueArray) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        if !array.data.is_null() {
+            for i in 0..array.len {
+                let pair = unsafe { &*array.data.add(i) };
+                let key = if pair.key.is_null() {
+                    String::new()
+                } else {
+                    unsafe { CStr::from_ptr(pair.key).to_string_lossy().into_owned() }
+                };
+                let value = if pair.value.is_null() {
+                    String::new()
+                } else {
+                    unsafe { CStr::from_ptr(pair.value).to_string_lossy().into_owned() }
+                };
+                map.insert(key, value);
+            }
+        }
+        map
+    }
+
+    // Helper: convert a C KeyNumber array to a HashMap<String, f64>
+    fn convert_key_number_array(array: &topt_KeyNumberArray) -> HashMap<String, f64> {
+        let mut map = HashMap::new();
+        if !array.data.is_null() {
+            for i in 0..array.len {
+                let pair = unsafe { &*array.data.add(i) };
+                let key = if pair.key.is_null() {
+                    String::new()
+                } else {
+                    unsafe { CStr::from_ptr(pair.key).to_string_lossy().into_owned() }
+                };
+                map.insert(key, pair.value);
+            }
+        }
+        map
+    }
+
+    // Helper: convert a single C topt_MockSpan to our Rust MockSpan struct
+    fn convert_mock_span(mock: &topt_MockSpan) -> MockSpan {
+        MockSpan {
+            span_id: mock.span_id,
+            trace_id: mock.trace_id,
+            parent_span_id: mock.parent_span_id,
+            start_time: Self::convert_unix_time(&mock.start_time),
+            finish_time: Self::convert_unix_time(&mock.finish_time),
+            operation_name: if mock.operation_name.is_null() {
+                String::new()
+            } else {
+                unsafe { CStr::from_ptr(mock.operation_name).to_string_lossy().into_owned() }
+            },
+            string_tags: Self::convert_key_value_array(&mock.string_tags),
+            number_tags: Self::convert_key_number_array(&mock.number_tags),
+        }
+    }
+
+    // Helper: convert the C array of spans into a Vec<MockSpan>
+    fn convert_mock_span_array(array: &topt_MockSpanArray) -> Vec<MockSpan> {
+        let mut vec = Vec::with_capacity(array.len);
+        if !array.data.is_null() {
+            for i in 0..array.len {
+                let mock_span = unsafe { &*array.data.add(i) };
+                vec.push(Self::convert_mock_span(mock_span));
+            }
+        }
+        vec
     }
 }

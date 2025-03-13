@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::thread::sleep;
 use std::time::Duration;
 use crate::test_optimization::*;
@@ -5,7 +6,7 @@ use crate::test_optimization::*;
 #[test]
 fn it_works() {
     // session
-    let session = TestSession::init();
+    let session = TestSession::init_mock();
     println!("Hello, world!");
 
     println!("{:?}", session.get_settings());
@@ -64,6 +65,16 @@ fn it_works() {
     pass_test.set_number_tag("Pass-NumberFromRust", 42f64);
     pass_test.set_test_source("test.rs", &6, &58);
     pass_test.set_coverage_data(&["file.rs"]);
+
+    let mut measurement_data:HashMap<&str, f64> = HashMap::new();
+    measurement_data.insert("data1", 42f64);
+    measurement_data.insert("data2", 64f64);
+    pass_test.set_benchmark_number_data("my_custom_measurement", &measurement_data);
+
+    let mut measurement_strdata:HashMap<&str, String> = HashMap::new();
+    measurement_strdata.insert("datastr1", "MyData".to_string());
+    measurement_strdata.insert("datastr2", "MyData2".to_string());
+    pass_test.set_benchmark_string_data("my_custom_measurement", &measurement_strdata);
     sleep(Duration::from_millis(1000));
 
     // Test span
@@ -96,4 +107,9 @@ fn it_works() {
     println!("suite closed: {}", suite.close());
     println!("module closed: {}", module.close());
     session.close(0);
+
+    let spans = MockTracer::get_finished_spans();
+    for span in spans {
+        println!("span: {:?}", span);
+    }
 }
