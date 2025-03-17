@@ -17,9 +17,9 @@ fn main() {
     };
 
     // Get the folder
-    let lib_name = format!("{}-{}-libcivisibility.7z", platform, arch);
+    let lib_name = format!("{}-{}-libcivisibility-static.7z", platform, arch);
     let url = format!(
-        "https://github.com/tonyredondo/rust-test-optimization-api/releases/download/v0.1.1/{}",
+        "https://github.com/tonyredondo/rust-test-optimization-api/releases/download/v0.2.0-preview/{}",
         lib_name
     );
     let lib_7z_path = PathBuf::from(out_dir.clone()).join("libcivisibility.7z");
@@ -46,7 +46,7 @@ fn main() {
 
     sevenz_rust::decompress_file(lib_7z_path, PathBuf::from(out_dir.clone())).expect("Failed to decompress native library");
 
-    let lib_filename = format!("{}-{}-libcivisibility", platform, arch);
+    let lib_filename = format!("{}-{}-libcivisibility-static", platform, arch);
     let lib_dir = PathBuf::from(out_dir.clone()).join(lib_filename);
     println!("cargo:rustc-link-search=native={}", lib_dir.display());
     println!("cargo:rustc-link-lib=static=civisibility");

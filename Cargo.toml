@@ -1,6 +1,6 @@
 [package]
 name = "temp-test-optimization-rust-api"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2021"
 description = "This is a test for a test optimization rust api to upload test optimization data"
 license = "Apache-2.0"
