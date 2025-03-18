@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use crate::cgo::*;
 use crate::libcivisibility_bindings::*;
 use std::alloc::{alloc, dealloc, Layout};
 use std::collections::HashMap;
@@ -136,12 +137,6 @@ static RUNTIME_NAME: &str = "rustc";
 pub struct TestSession {
     #[allow(dead_code)]
     pub session_id: u64,
-}
-
-#[cfg_attr(all(windows, target_env = "msvc"), link(name = "legacy_stdio_definitions", kind = "dylib"))]
-extern "C" {
-    #[cfg(target_os = "windows")]
-    pub fn _rt0_amd64_windows_lib();
 }
 
 impl TestSession {
