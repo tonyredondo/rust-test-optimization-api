@@ -138,6 +138,12 @@ pub struct TestSession {
     pub session_id: u64,
 }
 
+#[cfg_attr(all(windows, target_env = "msvc"), link(name = "legacy_stdio_definitions", kind = "dylib"))]
+extern "C" {
+    #[cfg(target_os = "windows")]
+    pub fn _rt0_amd64_windows_lib();
+}
+
 impl TestSession {
 
     #[allow(dead_code)]
