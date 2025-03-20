@@ -4,20 +4,26 @@ use std::path::PathBuf;
 fn main() {
     let target = env::var("TARGET").expect("Cargo did not provide TARGET");
     let out_dir = env::var("OUT_DIR").expect("Cargo did not provide OUT_DIR");
+    let platform = if target.contains("apple-darwin") { "macos" }
+        else if target.contains("windows") { "windows" }
+        else if target.contains("linux") { "linux" }
+        else { panic!("Unsupported platform: {}", target) };
+    let arch = if target.contains("aarch64") { "arm64" } else { "x64" };
 
-    // Detect arch and platform
-    let (platform, arch) = if target.contains("apple-darwin") {
-        ("macos", if target.contains("aarch64") { "arm64" } else { "x64" })
-    } else if target.contains("windows") {
-        ("windows", if target.contains("aarch64") { "arm64" } else { "x64" })
-    } else if target.contains("linux") {
-        ("linux", if target.contains("aarch64") { "arm64" } else { "x64" })
+    let lib_name = if platform == "macos" {
+        format!("{}-libcivisibility-static.7z", platform)
     } else {
-        panic!("Unsupported platform: {}", target);
+        format!("{}-{}-libcivisibility-static.7z", platform, arch)
     };
 
+    let lib_filename = if platform == "macos" {
+        format!("{}-libcivisibility-static", platform)
+    } else {
+        format!("{}-{}-libcivisibility-static", platform, arch)
+    }; 
+    
+
     // Get the folder
-    let lib_name = format!("{}-{}-libcivisibility-static.7z", platform, arch);
     let url = format!(
         "https://github.com/tonyredondo/rust-test-optimization-api/releases/download/v0.2.0-preview/{}",
         lib_name
@@ -46,7 +52,6 @@ fn main() {
 
     sevenz_rust::decompress_file(lib_7z_path, PathBuf::from(out_dir.clone())).expect("Failed to decompress native library");
 
-    let lib_filename = format!("{}-{}-libcivisibility-static", platform, arch);
     let lib_dir = PathBuf::from(out_dir.clone()).join(lib_filename);
     println!("cargo:rustc-link-search=native={}", lib_dir.display());
     println!("cargo:rustc-link-lib=static=civisibility");

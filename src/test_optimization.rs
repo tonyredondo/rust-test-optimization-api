@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+#[cfg(target_os = "windows")]
 use crate::cgo::*;
 use crate::libcivisibility_bindings::*;
 use std::alloc::{alloc, dealloc, Layout};
